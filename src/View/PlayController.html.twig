@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="auto" dir="auto">
+<head>
+    <title>{{ page.title }}</title>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .plyr {
+            height: 100vh;
+        }
+
+        .plyr video {
+            object-fit: fill !important;
+        }
+
+    </style>
+
+    <link rel="stylesheet" href="{{ assets('vendor/plyr/plyr.min.css') }}">
+    <script src="{{ assets('vendor/plyr/plyr.min.js') }}"></script>
+    <script src="{{ assets('vendor/hls.min.js') }}"></script>
+</head>
+<body>
+
+<div>
+    <video id="video-player" controls autoplay="autoplay" preload="auto"></video>
+</div>
+
+<script type="text/javascript" defer>
+    const video = document.querySelector('#video-player');
+    const player = new Plyr(video, {
+        iosNative: true,
+        autoplay: true,
+        controls: [
+            'play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'pip', 'airplay', 'fullscreen', 'download'
+        ],
+        fullscreen: {
+            enabled: true,
+            fallback: true,
+            iosNative: true,
+        },
+        urls: {
+            download: '{{ page.download }}',
+        },
+        mediaMetadata: {title: '{{ metadata.title }}'}
+    });
+
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = '{{ page.hls|raw }}';
+        video.addEventListener('loadedmetadata', function () {
+            video.play();
+        });
+    } else {
+        let hls = new Hls();
+        hls.loadSource('{{ page.hls|raw }}');
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+            video.play();
+        });
+    }
+</script>
+
+</body>
+</html>

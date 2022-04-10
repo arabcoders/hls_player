@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="theme-color" content="#000000">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    {% block app_header_meta %}{% endblock %}
+
+    <title>{{ context.title|default('no title') }}</title>
+
+    <link type="text/css" rel="stylesheet" href="{{ assets('css/app.css') }}">
+    <link type="text/css" rel="stylesheet" href="{{ assets('css/bulma.min.css') }}">
+    <script crossorigin="anonymous" src="{{ assets('js/fa.min.js') }}"></script>
+    <script crossorigin="anonymous" src="{{ assets('js/turbolinks.js') }}"></script>
+    <script crossorigin="anonymous" src="{{ assets('js/timeago.min.js') }}"></script>
+    <script type="text/javascript" src="{{ assets('js/app.js') }}"></script>
+    {% block app_header_js %}{% endblock %}
+    {% block app_header_css %}{% endblock %}
+</head>
+
+<body>
+{% block mainContainer %}
+    <div class="container">
+
+        {% block mainHeaderBlock %}
+            <div class="pt-2 pb-2 {{ context.mainHeader.class }}">
+                <div class="columns is-mobile">
+                    <div class="column">
+                        {% block mainHeader %}
+                            <h1 class="title is-3">
+                                <a href="{{ context.mainHeader.url|default('javascript:void(0);') }}">
+                                    {% if context.mainHeader.raw.title %}
+                                        {{ context.mainHeader.title|raw }}
+                                    {% else %}
+                                        {{ context.mainHeader.title }}
+                                    {% endif %}
+                                </a>
+                            </h1>
+                            <h2 class="subtitle is-6">
+                                {% if context.mainHeader.raw.text %}
+                                    {{ context.mainHeader.text|raw }}
+                                {% else %}
+                                    {{ context.mainHeader.text }}
+                                {% endif %}
+                                {% if context.mainHeader.subtext %}
+                                    <div>
+                                        {% if context.mainHeader.raw.subtext %}
+                                            {{ context.mainHeader.subtext|raw }}
+                                        {% else %}
+                                            {{ context.mainHeader.subtext }}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </h2>
+                        {% endblock mainHeader %}
+
+                        {% block mainHeaaderWarning %}
+                            {% if context.header.warnings %}
+                                {% for item in context.header.warnings %}
+                                    <article class="message {{ item.class|default('is-danger') }}">
+                                        <div class="message-body has-text-centered has-text-weight-bold">
+                                            {% if item.raw %}
+                                                {{ item.text|raw }}
+                                            {% else %}
+                                                {{ item.text }}
+                                            {% endif %}
+                                        </div>
+                                    </article>
+                                {% endfor %}
+                            {% endif %}
+                        {% endblock mainHeaaderWarning %}
+
+                    </div>
+                </div>
+            </div>
+        {% endblock mainHeaderBlock %}
+
+        <div class="columns errors-list is-multiline">
+        </div>
+
+        {% block mainContentBlock %}
+            <div class="columns">
+                <div class="column">
+                    {% block mainContent %}
+                    {% endblock mainContent %}
+                </div>
+            </div>
+        {% endblock mainContentBlock %}
+    </div>
+    <script type="text/javascript" defer>
+        if (document.querySelectorAll('.timeago').length >= 1) {
+            timeago?.render(document.querySelectorAll('.timeago'));
+        }
+    </script>
+{% endblock mainContainer %}
+</body>
+
+</html>

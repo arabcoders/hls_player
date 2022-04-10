@@ -1,0 +1,190 @@
+{% extends IS_AJAX ? 'empty.html.twig' : 'home.html.twig' %}
+
+{% block mainHeader %}
+    {% if not IS_AJAX %}
+        <nav class="breadcrumb is-inline-block">
+            <ul>
+                {% for item in context.breadcrumb %}
+                    <li {% if loop.last %}class="is-active{% endif %}">
+                        <a href="{{ item.link }}">
+                            {{ item.name }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </nav>
+    {% endif %}
+{% endblock mainHeader %}
+
+{% block mainContent %}
+    <div class="{% if not IS_AJAX %}box{% endif %}">
+        <div class="field">
+            <div class="columns is-multiline">
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label">Select Video Stream</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="video" id="video">
+                                {% for item in page.info.video %}
+                                    <option value="{{ item.ref.container }}">
+                                        {{ item.codec.short }} - {{ item.codec.long|default(item.codec.short) }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label has-text-danger">Video Encoder</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="video_codec" id="video_codec">
+                                <option value="libx264">Software Encoder (libx264)</option>
+                                <option value="h264_nvenc">Hardware Encoder (H264_NVENC) (Nvidia)</option>
+                                <option value="h264_qsv">Hardware Encoder (H264_QSV) (Intel Quick Sync)</option>
+                                <option value="h264_amf">Hardware Encoder (H264_AMF) (AMD)</option>
+                                <option value="h264_vaapi">Hardware Encoder (H264_VAAPI) (Linux VAAPI)</option>
+                                <option value="copy">No Transcode (Cannot be used with subtitles)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label">Video Preset</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="video_preset" id="video_preset">
+                                <option value="medium">
+                                    Medium
+                                </option>
+                                <option value="fast" selected>
+                                    Fast
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label">Video CRF</label>
+                    <div class="control">
+                        <input type="text" name="video_crf" id="video_crf" class="input" value="23">
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label">Video Profile</label>
+                    <div class="control">
+                        <input type="text" name="video_profile" id="video_profile" class="input" value="main">
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label">Video Level</label>
+                    <div class="control">
+                        <input type="text" name="video_level" id="video_level" class="input" value="4.1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="columns is-multiline">
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label has-text-danger">Select Audio Stream</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="audio" id="audio">
+                                {% for item in page.info.audio %}
+                                    <option {% if item.default %}selected{% endif %}
+                                            value="{{ item.ref.container }}">
+                                        {% if item.title %}
+                                            {{ item.title|default('??') }} - {{ item.language }}
+                                        {% else %}
+                                            {{ item.language|upper }}
+                                        {% endif %}
+                                        - {{ item.codec.short }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label has-text-danger">Audio Encoder</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select name="audio_codec" id="audio_codec">
+                                <option value="aac">Advanced Audio Codec (AAC)</option>
+                                <option value="mp3">MPEG-1 Audio Layer III (MP3)</option>
+                                <option value="opus">Opus Audio Format (OPUS)</option>
+                                <option value="copy">No Transcode</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label">Audio Bitrate</label>
+                    <div class="control">
+                        <input type="text" name="audio_bitrate" id="audio_bitrate" class="input" value="192k">
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label">Audio Channels</label>
+                    <div class="control">
+                        <input type="text" name="audio_channels" id="audio_channels" class="input" value="2">
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label">Audio Sampling Rate</label>
+                    <div class="control">
+                        <input type="text" name="audio_sampling_rate" id="audio_sampling_rate" class="input"
+                               value="22050">
+                    </div>
+                </div>
+                <div class="column is-4-tablet is-12-mobile">
+                    <label class="label has-text-danger">Subtitles</label>
+                    <div class="control">
+                        <div class="select is-fullwidth" {% if not page.info.subtitle %}disabled{% endif %}>
+                            <select name="subtitle" id="subtitle">
+                                <option data-kind="none" value="none">None</option>
+                                {% for item in page.info.subtitle %}
+                                    <option data-kind="{{ item.kind }}" {% if item.default %}selected{% endif %}
+                                            value="{{ item.ref.container|default(item.ref.path) }}">
+                                        {% if item.title %}
+                                            {{ item.title|default('??') }} - {{ item.language|upper }}
+                                        {% else %}
+                                            {{ item.language|upper }}
+                                        {% endif %}
+                                        - {{ item.codec.short }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" id="url" value="{{ page.stream }}">
+
+        {% if not IS_AJAX %}
+            <div class="columns is-multiline">
+                <div class="column">
+                    <button type="button" class="button is-danger is-fullwidth" onclick="StreamVideo();">
+                        <span class="icon-text">
+                            <span class="icon"><i class="fa fab fa-youtube"></i></span>
+                            <span>Stream</span>
+                        </span>
+                    </button>
+                </div>
+                <div class="column">
+                    <a href="{{ page.direct }}" type="button"
+                       class="button is-purple is-fullwidth" data-turbolinks="false">
+                        <span class="icon-text">
+                            <span class="icon"><i class="fas fa-play"></i></span>
+                            <span>Direct</span>
+                        </span>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock mainContent %}

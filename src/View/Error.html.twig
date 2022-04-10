@@ -1,0 +1,35 @@
+{% extends 'home.html.twig' %}
+
+{% block mainHeader %}
+    <h1 class="title is-4">
+        {{ context.message.title|default(context.header.title) }}
+    </h1>
+{% endblock mainHeader %}
+
+{% block app_header_meta %}
+    {% if context.message.url and not app.state.isUser %}
+        <meta http-equiv="refresh" content="{{ context.message.time|default(60) }}; URL={{ context.message.url }}">
+    {% endif %}
+{% endblock app_header_meta %}
+
+{% block mainContentBlock %}
+    <div class="columns">
+        <div class="column">
+            <div class="notification {{ context.message.class|default('is-info') }} is-light">
+                <h2 class="title is-4">
+                    {% if context.message.raw %}
+                        {{ context.message.text|raw }}
+                    {% else %}
+                        {{ context.message.text }}
+                    {% endif %}
+                </h2>
+                {% if context.message.url %}
+                    <hr class="line">
+                    <p>
+                        {{ "If you are not forwarded in few seconds <a href='%s'>Click here</a>."|format(context.message.url)|raw }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

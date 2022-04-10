@@ -1,0 +1,10 @@
+**/.idea
+**/.git
+./vendor
+./var/*
+!./var/.gitignore
+.phpunit.result.cache
+**/.env
+./ide-twig.json
+./.phpstorm.meta.php
+./.editorconfig

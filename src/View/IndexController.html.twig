@@ -1,0 +1,68 @@
+{% extends 'home.html.twig' %}
+
+{% block mainHeader %}
+    <nav class="breadcrumb is-inline-block">
+        <ul>
+            {% for item in context.breadcrumb %}
+                <li {% if loop.last %}class="is-active{% endif %}">
+                    <a href="{{ item.link }}">
+                        {{ item.name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </nav>
+{% endblock mainHeader %}
+
+{% block mainContentBlock %}
+    <div class="columns">
+        <div class="column is-12">
+            <table dir="auto" id="serverStatus" class="table is-bordered is-striped is-fullwidth has-text-centered">
+                <thead>
+                <tr>
+                    <th width="80%">Path</th>
+                    <th width="10">Size</th>
+                    <th width="10">Time</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in page.files %}
+                    <tr>
+                        <td class="has-text-left">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    {% if item.isDir %}
+                                        <i class="fa fa-folder"></i>
+                                    {% elseif item.isVideo %}
+                                        <i class="fa fa-video"></i>
+                                    {% elseif item.isAudio %}
+                                        <i class="fa fa-file-music"></i>
+                                    {% elseif item.isSubtitle %}
+                                        <i class="fa fa-closed-captioning"></i>
+                                    {% else %}
+                                        <i class="fa fa-question"></i>
+                                    {% endif %}
+                                </span>
+                                <span>
+                                    <a title="{{ item.fullName }}" href="{{ item.url }}"
+                                       class="{{ item.isVideo }}transcode{{ endif }}">
+                                        {{ item.name }}
+                                    </a>
+                                </span>
+                            </span>
+                        </td>
+                        <td>
+                            {{ item.size }}
+                        </td>
+                        <td>
+                            <time class="timeago" datetime="{{ item.time }}">
+                                {{ item.time }}
+                            </time>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
