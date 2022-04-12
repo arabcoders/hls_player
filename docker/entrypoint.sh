@@ -3,7 +3,7 @@ set -eo pipefail
 
 VP_UID=${VP_UID:-1000}
 VP_GID=${VP_GID:-1000}
-VP_NO_CHOWN=${WS_NO_CHOWN:-0}
+VP_NO_CHOWN=${VP_NO_CHOWN:-0}
 
 set -u
 

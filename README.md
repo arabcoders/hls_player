@@ -34,12 +34,12 @@ services:
         container_name: hls_player
         restart: unless-stopped
         environment:
-            WS_UID: ${UID:-1000} # Set container operation user id.
-            WS_GID: ${GID:-1000} # Set container operation group id.
+            VP_UID: ${UID:-1000} # Set container operation user id.
+            VP_GID: ${GID:-1000} # Set container operation group id.
         ports:
             - "8081:80" # HTTP server port
         volumes:
-            - ${PWD}/:/config:rw # mount current directory to container /config directory.
+            - ${PWD}:/config:rw # mount current directory to container /config directory.
             - /mnt/media:/storage:ro # mount your media files.
 ```
 
