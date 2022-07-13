@@ -6,7 +6,7 @@ ENV VP_MEDIA_PATH=/storage
 ENV VP_DATA_PATH=/config
 ENV VP_SENDFILE=true
 
-RUN mkdir -p /app /config
+RUN apk add --no-cache ffmpeg && mkdir -p /app /config
 
 COPY . /app
 
