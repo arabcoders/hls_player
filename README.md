@@ -30,7 +30,7 @@ create your `docker-compose.yaml` file
 version: '3.3'
 services:
     hls_player:
-        image: arabcoders/hls_player:latest
+        image: ghcr.io/arabcoders/hls_player:latest
         container_name: hls_player
         restart: unless-stopped
         environment:

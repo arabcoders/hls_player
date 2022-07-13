@@ -1,19 +1,12 @@
-FROM php:8.1-fpm-alpine
+FROM ghcr.io/arabcoders/php_container:latest
+LABEL maintainer="admin@arabcoders.org"
 
 ENV IN_DOCKER=1
 ENV VP_MEDIA_PATH=/storage
 ENV VP_DATA_PATH=/config
 ENV VP_SENDFILE=true
 
-LABEL maintainer="admin@arabcoders.org"
-
-ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/bin/
-
-RUN mv "${PHP_INI_DIR}/php.ini-production" "${PHP_INI_DIR}/php.ini" && chmod +x /usr/bin/install-php-extensions && \
-    sync && install-php-extensions fileinfo mbstring redis ctype json opcache && \
-    apk add --no-cache nginx redis ffmpeg nano curl procps shadow runuser && \
-    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer && \
-    mkdir -p /app /config
+RUN mkdir -p /app /config
 
 COPY . /app
 
