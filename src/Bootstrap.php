@@ -71,9 +71,9 @@ final class Bootstrap
 
     public function onBoot(): self
     {
-        if (env('IN_DOCKER')) {
-            $this->logger->pushHandler(new StreamHandler(STDERR, Logger::DEBUG));
-        } else {
+        $this->logger->pushHandler(new StreamHandler(STDERR, Logger::DEBUG));
+
+        if (!inContainer()) {
             $this->logger->pushHandler(new SyslogHandler('hls_player', LOG_USER, Logger::DEBUG));
         }
 
@@ -175,18 +175,33 @@ final class Bootstrap
         }
 
         set_error_handler(
-            function (int $number, mixed $error, mixed $file, int $line) {
-                $msg = trim(sprintf('%d: %s (%s:%d).', $number, $error, $file, $line));
-                $this->logger->error($msg);
+            function ($severity, $message, $file, $line) {
+                if (!(error_reporting() & $severity)) {
+                    return;
+                }
+
+                Container::get(LoggerInterface::class)->error(
+                    r("{severity}: {error} ({file}:{line})." . PHP_EOL, [
+                        'severity' => $severity,
+                        'error' => $message,
+                        'file' => $file,
+                        'line' => $line,
+                    ])
+                );
+
                 exit(1);
             }
         );
 
         set_exception_handler(function (Throwable $e) {
-            $msg = trim(
-                sprintf("%s: %s (%s:%d)." . PHP_EOL, get_class($e), $e->getMessage(), $e->getFile(), $e->getLine())
+            Container::get(LoggerInterface::class)->error(
+                r("{class}: {error} ({file}:{line})." . PHP_EOL, [
+                    'class' => get_class($e),
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ])
             );
-            $this->logger->error($msg, ['exception' => $e]);
             exit(1);
         });
     }
@@ -200,50 +215,47 @@ final class Bootstrap
 
             return $this->router->dispatch($request);
         } catch (NotFoundException) {
-            $message = sprintf(
-                'NotFoundException: %s - %s: %s',
-                ag($request->getServerParams(), 'REMOTE_ADDR', '??'),
-                $request->getMethod(),
-                ag($request->getServerParams(), 'REQUEST_URI', '/'),
-            );
+            $message = r('NotFoundException: {ip} - {method}: {uri}', [
+                'ip' => ag($request->getServerParams(), 'REMOTE_ADDR', '??'),
+                'method' => $request->getMethod(),
+                'uri' => ag($request->getServerParams(), 'REQUEST_URI', '/'),
+            ]);
 
             $this->logger->notice($message);
 
             if (isJsonRequest($request)) {
-                return new JsonResponse(
-                    [
-                        'type' => 'error',
-                        'message' => 'Endpoint not found.'
-                    ],
-                    HttpStatus::NOT_FOUND
-                );
+                return new JsonResponse([
+                    'type' => 'error',
+                    'message' => 'Endpoint not found.'
+                ], HttpStatus::NOT_FOUND);
             }
+
             return new TextResponse('ERROR 404 - Page not found.', HttpStatus::NOT_FOUND);
         } catch (MethodNotAllowedException) {
-            $message = sprintf(
-                'MethodNotAllowedException: %s - %s: %s',
-                ag($request->getServerParams(), 'REMOTE_ADDR', '??'),
-                $request->getMethod(),
-                ag($request->getServerParams(), 'REQUEST_URI', '/'),
-            );
+            $message = r('MethodNotAllowedException: {ip} - {method}: {uri}', [
+                'ip' => ag($request->getServerParams(), 'REMOTE_ADDR', '??'),
+                'method' => $request->getMethod(),
+                'uri' => ag($request->getServerParams(), 'REQUEST_URI', '/'),
+            ]);
 
             $this->logger->notice($message);
 
             if (isJsonRequest($request)) {
-                return new JsonResponse(
-                    ['type' => 'error', 'message' => 'Invalid request method.',],
-                    HttpStatus::BAD_REQUEST
-                );
+                return new JsonResponse([
+                    'type' => 'error',
+                    'message' => 'Invalid request method.',
+                ], HttpStatus::BAD_REQUEST);
             }
+
             return new TextResponse('ERROR 400 - Invalid request method.', HttpStatus::BAD_REQUEST);
         } catch (RouteException $e) {
-            $message = sprintf(
-                '%s: %s - %s: %s',
-                get_class($e),
-                ag($request->getServerParams(), 'REMOTE_ADDR', '??'),
-                $request->getMethod(),
-                ag($request->getServerParams(), 'REQUEST_URI', '/'),
-            );
+            $message = r('{class}: {ip} - {method}: {uri} - {message}', [
+                'class' => get_class($e),
+                'ip' => ag($request->getServerParams(), 'REMOTE_ADDR', '??'),
+                'method' => $request->getMethod(),
+                'uri' => ag($request->getServerParams(), 'REQUEST_URI', '/'),
+                'message' => $e->getMessage(),
+            ]);
 
             $this->logger->notice($message);
 
@@ -258,16 +270,23 @@ final class Bootstrap
         $dataPath = getDataPath();
 
         if (!is_writable($dataPath)) {
-            throw new RuntimeException(sprintf('Unable to write to data path \'%s\'.', $dataPath));
+            throw new RuntimeException(
+                r('Unable to write to data path \'{path}\'.', [
+                    'path' => $dataPath
+                ])
+            );
         }
 
         foreach (require $directories as $directory) {
             $path = $dataPath . DIRECTORY_SEPARATOR . $directory;
 
             if (!file_exists($path) && !@mkdir($path, 0777, true) && !is_dir($path)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created.', $path));
+                throw new RuntimeException(
+                    r('Unable to create \'{path}\' path.', [
+                        'path' => $path
+                    ])
+                );
             }
         }
     }
-
 }

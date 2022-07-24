@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Bootstrap;
 use App\Libs\Extenders\Cache;
 use App\Libs\GenerateRoutes;
 use Nyholm\Psr7\Factory\Psr17Factory;
