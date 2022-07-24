@@ -65,7 +65,7 @@ RUN echo '' && \
     # Remove unneeded directories and tools.
     bash -c 'rm -rf /opt/composer ${TOOL_PATH}/{container,.github,.git,.env}' && \
     # Change Permissions.
-    chown -R user:user /opt /var/log/ /etc/caddy/ && chmod -R 775 /var/log/
+    chown -R user:user /opt /var/log/ /etc/caddy/ && chmod -R 775 /var/log/ && chmod -R 777 /opt/app/var/
 
 # Set the entrypoint.
 #
