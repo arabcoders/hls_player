@@ -63,9 +63,28 @@ if (!function_exists('env')) {
 }
 
 if (!function_exists('ag')) {
-    function ag(array $array, string $path, mixed $default = null, string $separator = '.'): mixed
+    function ag(array|object $array, string|array|int|null $path, mixed $default = null, string $separator = '.'): mixed
     {
-        if (array_key_exists($path, $array)) {
+        if (empty($path)) {
+            return $array;
+        }
+
+        if (!is_array($array)) {
+            $array = get_object_vars($array);
+        }
+
+        if (is_array($path)) {
+            foreach ($path as $key) {
+                $val = ag($array, $key, '_not_set');
+                if ('_not_set' === $val) {
+                    continue;
+                }
+                return $val;
+            }
+            return getValue($default);
+        }
+
+        if (null !== ($array[$path] ?? null)) {
             return $array[$path];
         }
 
@@ -73,8 +92,8 @@ if (!function_exists('ag')) {
             return $array[$path] ?? getValue($default);
         }
 
-        foreach ((array)explode($separator, $path) as $segment) {
-            if (is_array($array) && array_key_exists((string)$segment, $array)) {
+        foreach (explode($separator, $path) as $segment) {
+            if (is_array($array) && array_key_exists($segment, $array)) {
                 $array = $array[$segment];
             } else {
                 return getValue($default);
@@ -83,7 +102,9 @@ if (!function_exists('ag')) {
 
         return $array;
     }
+}
 
+if (!function_exists('ag_set')) {
     /**
      * Set an array item to a given value using "dot" notation.
      *
@@ -98,7 +119,7 @@ if (!function_exists('ag')) {
      */
     function ag_set(array $array, string $path, mixed $value, string $separator = '.'): array
     {
-        $keys = (array)explode($separator, $path);
+        $keys = explode($separator, $path);
 
         $at = &$array;
 
@@ -107,7 +128,7 @@ if (!function_exists('ag')) {
                 if (is_array($at)) {
                     $at[array_shift($keys)] = $value;
                 } else {
-                    throw new RuntimeException("Can not set value at this path ($path) because is not array.");
+                    throw new RuntimeException("Can not set value at this path ($path) because its not array.");
                 }
             } else {
                 $path = array_shift($keys);
@@ -120,7 +141,9 @@ if (!function_exists('ag')) {
 
         return $array;
     }
+}
 
+if (!function_exists('ag_exists')) {
     /**
      * Determine if the given key exists in the provided array.
      *
@@ -136,7 +159,7 @@ if (!function_exists('ag')) {
             return isset($array[$path]);
         }
 
-        foreach ((array)explode($separator, $path) as $lookup) {
+        foreach (explode($separator, $path) as $lookup) {
             if (isset($array[$lookup])) {
                 $array = $array[$lookup];
             } else {
@@ -146,7 +169,9 @@ if (!function_exists('ag')) {
 
         return true;
     }
+}
 
+if (!function_exists('ag_delete')) {
     /**
      * Delete given key path.
      *
@@ -172,7 +197,7 @@ if (!function_exists('ag')) {
 
         $items = &$array;
 
-        $segments = (array)explode($separator, $path);
+        $segments = explode($separator, $path);
 
         $lastSegment = array_pop($segments);
 
@@ -184,7 +209,7 @@ if (!function_exists('ag')) {
             $items = &$items[$segment];
         }
 
-        if (null !== $lastSegment && array_key_exists((string)$lastSegment, $items)) {
+        if (null !== $lastSegment && array_key_exists($lastSegment, $items)) {
             unset($items[$lastSegment]);
         }
 
@@ -252,13 +277,10 @@ if (!function_exists('view')) {
             $response->getBody()->write(renderView($twig, $view, $params));
             return $response;
         } catch (\Twig\Error\Error $e) {
-            Container::get(LoggerInterface::class)->error(
-                $e->getMessage(),
-                [
-                    'file' => $e->getMessage(),
-                    'line' => $e->getLine()
-                ]
-            );
+            Container::get(LoggerInterface::class)->error($e->getMessage(), [
+                'file' => $e->getMessage(),
+                'line' => $e->getLine()
+            ]);
 
             $response->getBody()->write('Unable to render view.');
 
@@ -411,7 +433,7 @@ if (!function_exists('getDataPath')) {
         }
 
         if (null === ($dataPath = env('VP_DATA_PATH'))) {
-            $dataPath = fixPath(env('IN_DOCKER') ? '/config' : __DIR__ . '/../../var');
+            $dataPath = fixPath(realpath(__DIR__ . '/../../var'));
         } else {
             $dataPath = fixPath($dataPath);
         }
@@ -442,7 +464,7 @@ if (!function_exists('array_change_key_case_recursive')) {
     function array_change_key_case_recursive(array $input, int $case = CASE_LOWER): array
     {
         if (!in_array($case, [CASE_UPPER, CASE_LOWER], true)) {
-            throw new RuntimeException("Case parameter '{$case}' is invalid.");
+            throw new RuntimeException(r('Case parameter [{case}] is invalid.', ['case' => $case]));
         }
 
         $input = array_change_key_case($input, $case);
@@ -584,5 +606,78 @@ if (!function_exists('afterLast')) {
         }
 
         return mb_substr($subject, $position + mb_strlen($search));
+    }
+}
+
+if (false === function_exists('r')) {
+    /**
+     * Substitute words enclosed in special tags for values from context.
+     *
+     * @param string $text text that contains tokens.
+     * @param array $context A key/value pairs list.
+     * @param string $tagLeft left tag bracket. Default '{'.
+     * @param string $tagRight right tag bracket. Default '}'.
+     *
+     * @return string
+     */
+    function r(string $text, array $context = [], string $tagLeft = '{', string $tagRight = '}'): string
+    {
+        if (false === str_contains($text, $tagLeft) || false === str_contains($text, $tagRight)) {
+            return $text;
+        }
+
+        $pattern = '#' . preg_quote($tagLeft, '#') . '([\w\d_.]+)' . preg_quote($tagRight, '#') . '#is';
+
+        $status = preg_match_all($pattern, $text, $matches);
+
+        if (false === $status || $status < 1) {
+            return $text;
+        }
+
+        $replacements = [];
+
+        foreach ($matches[1] as $key) {
+            $placeholder = $tagLeft . $key . $tagRight;
+
+            if (false === str_contains($text, $placeholder)) {
+                continue;
+            }
+
+            if (false === ag_exists($context, $key)) {
+                continue;
+            }
+
+            $val = ag($context, $key);
+
+            $context = ag_delete($context, $key);
+
+            if (is_null($val) || is_scalar($val) || (is_object($val) && method_exists($val, '__toString'))) {
+                $replacements[$placeholder] = $val;
+            } elseif (is_object($val)) {
+                $replacements[$placeholder] = implode(',', get_object_vars($val));
+            } elseif (is_array($val)) {
+                $replacements[$placeholder] = implode(',', $val);
+            } else {
+                $replacements[$placeholder] = '[' . gettype($val) . ']';
+            }
+        }
+
+        return strtr($text, $replacements);
+    }
+}
+
+
+if (false === function_exists('inContainer')) {
+    function inContainer(): bool
+    {
+        if (true === (bool)env('IN_CONTAINER')) {
+            return true;
+        }
+
+        if (true === file_exists('/.dockerenv')) {
+            return true;
+        }
+
+        return false;
     }
 }

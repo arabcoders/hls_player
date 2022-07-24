@@ -23,7 +23,7 @@ final class DownloadController
 
     private string $basePath = '';
 
-    public function __construct(private LoggerInterface $logger)
+    public function __construct(private readonly LoggerInterface $logger)
     {
         if (null === ($basePath = env('VP_MEDIA_PATH'))) {
             throw new RuntimeException('No valid media path was given in ENV:VP_MEDIA_PATH.');
@@ -57,22 +57,26 @@ final class DownloadController
                 return message(sprintf('Invalid path was given. \'%s\'.', $userPath));
             }
 
+            $mimeType = $fileSystem->mimeType($userPath);
+
             if (true === (bool)env('VP_SENDFILE')) {
+                $sfHeader = env('VP_SENDFILE_HEADER', 'X-Accel-Redirect');
+                $sfValue = env('VP_SENDFILE_BASE', '/') . $userPath;
+
                 return new Response(status: HttpStatus::OK, headers: [
                     'Content-Transfer-Encoding' => 'binary',
                     'Content-Disposition' => sprintf('inline; filename="%s"', basename($userPath)),
                     'X-Accel-Buffering' => 'no',
-                    'Content-Type' => '',
+                    'Content-Type' => $mimeType,
                     'Content-Length' => '',
                     'Last-Modified' => '',
                     'Pragma' => 'public',
                     'Cache-Control' => sprintf('public, max-age=%s', time() + 31536000),
                     'Expires' => sprintf('Expires: %s GMT', gmdate('D, d M Y H:i:s', time() + 31536000)),
-                    env('VP_SENDFILE_HEADER', 'X-Accel-Redirect') => '/_storage/' . urlSafe($userPath),
+                    $sfHeader => $sfValue,
                 ]);
             }
 
-            $mimeType = $fileSystem->mimeType($userPath);
             $fileSize = $fileSystem->fileSize($userPath);
 
             $start = 0;
@@ -100,7 +104,7 @@ final class DownloadController
                 }
 
                 if ('-' === $range) {
-                    $c_start = $fileSize - substr($range, 1);
+                    $c_start = $fileSize - (int)substr($range, 1);
                 } else {
                     $range = explode('-', $range);
                     $c_start = $range[0];

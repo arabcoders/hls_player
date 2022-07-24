@@ -20,27 +20,29 @@ different container that has hardware acceleration support.
 When you select a video file, you will be presented with a screen that give you options on how to encode the video file,
 after you finish selecting what you want, and click **Stream** it will hand off the file to a controller that would
 segment the video file into chunks to support seeking, we use HLS protocol to support wide devices, we tested on
-iOS/chrome/firefox, and the defaults works. 
+iOS/chrome/firefox, and the defaults works.
 
 ## Install
 
 create your `docker-compose.yaml` file
 
 ```yaml
-version: '3.3'
+version: '2.3'
 services:
     hls_player:
         image: ghcr.io/arabcoders/hls_player:latest
+        # To change the user/group id associated with the app change the following line.
+        user: "${UID:-1000}:${GID:-1000}"
         container_name: hls_player
         restart: unless-stopped
-        environment:
-            VP_UID: ${UID:-1000} # Set container operation user id.
-            VP_GID: ${GID:-1000} # Set container operation group id.
         ports:
-            - "8081:80" # HTTP server port
+            # App port.
+            - "8080:8080" 
         volumes:
-            - ${PWD}:/config:rw # mount current directory to container /config directory.
-            - /mnt/media:/storage:ro # mount your media files.
+            # Directory to store app data. Mounted to container /opt/app/var directory.
+            - ./data:/opt/app/var:rw
+            # Your media files path. Mounted to /srv in container.
+            - /mnt/media:/srv:ro
 ```
 
 After creating your docker-compose file, start the container.
