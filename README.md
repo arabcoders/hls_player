@@ -51,4 +51,4 @@ After creating your docker-compose file, start the container.
 $ docker-compose up -d
 ```
 
-Now, go to `http://localhost:8081/` and browse your media.
+Now, go to `http://localhost:8080/` and browse your media.
