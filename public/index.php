@@ -17,15 +17,13 @@ set_error_handler(function (int $number, mixed $error, mixed $file, int $line) {
         return;
     }
 
-    $message = trim(sprintf('%s: %s (%s:%d)', $number, $error, $file, $line));
-    fwrite(STDERR, $message);
-
+    fwrite(STDERR, trim(sprintf('%s: %s (%s:%d)', $number, $error, $file, $line)));
     exit(1);
 });
 
 set_exception_handler(function (Throwable $e) {
     $message = trim(sprintf("%s: %s (%s:%d).", get_class($e), $e->getMessage(), $e->getFile(), $e->getLine()));
-    fwrite(STDERR, $message);
+    fwrite(STDERR, $message . PHP_EOL . $e->getTraceAsString());
     exit(1);
 });
 
@@ -33,7 +31,7 @@ try {
     emitResponse((new Bootstrap())->onBoot()->run());
 } catch (Throwable $e) {
     $message = trim(sprintf("%s: %s (%s:%d).", get_class($e), $e->getMessage(), $e->getFile(), $e->getLine()));
-    fwrite(STDERR, $message);
+    fwrite(STDERR, $message . PHP_EOL . $e->getTraceAsString());
     if (!headers_sent()) {
         http_response_code(500);
     }

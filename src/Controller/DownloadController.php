@@ -67,7 +67,7 @@ final class DownloadController
                     'Content-Transfer-Encoding' => 'binary',
                     'Content-Disposition' => sprintf('inline; filename="%s"', basename($userPath)),
                     'X-Accel-Buffering' => 'no',
-                    'Content-Type' => $mimeType,
+                    'Content-Type' => '',
                     'Content-Length' => '',
                     'Last-Modified' => '',
                     'Pragma' => 'public',

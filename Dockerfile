@@ -11,7 +11,7 @@ ENV VP_SENDFILE=true
 
 # Setup the required environment.
 #
-RUN apk add --no-cache bash caddy nano curl procps net-tools iproute2 shadow sqlite redis tzdata gettext fcgi ffmpeg \
+RUN apk add --no-cache mailcap bash caddy nano curl procps net-tools iproute2 shadow sqlite redis tzdata gettext fcgi ffmpeg \
     ${PHP_V} ${PHP_V}-common ${PHP_V}-ctype ${PHP_V}-curl ${PHP_V}-dom ${PHP_V}-fileinfo ${PHP_V}-fpm \
     ${PHP_V}-intl ${PHP_V}-mbstring ${PHP_V}-opcache ${PHP_V}-pcntl ${PHP_V}-pdo_sqlite ${PHP_V}-phar \
     ${PHP_V}-posix ${PHP_V}-session ${PHP_V}-shmop ${PHP_V}-simplexml ${PHP_V}-snmp ${PHP_V}-sockets \
